@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 using System;
+using System.Collections.Generic;
 
 public class UInterface : MonoBehaviour
 {
@@ -13,7 +14,9 @@ public class UInterface : MonoBehaviour
     }
 
     [DllImport("YGarmentLib")]
-    private static extern IntPtr RigidAffine(ref int size,IntPtr plist,int pl,IntPtr qlist,int ql,IntPtr vlist,int vl,int type);
+    private static extern IntPtr MeshDeformation(ref int size,IntPtr plist,int pl,IntPtr qlist,int ql,IntPtr vlist,int vl,IntPtr tlist,int tl,int type);
+    [DllImport("YGarmentLib")]
+    private static extern IntPtr ARAPDeformation(ref int size, IntPtr plist, int pl, IntPtr qlist, int ql, IntPtr vlist, int vl, IntPtr tlist, int tl, int iterCount);
 
     [DllImport("YGarmentLib")]
     private static extern void Release(IntPtr p);
@@ -26,6 +29,9 @@ public class UInterface : MonoBehaviour
 
     [DllImport("YGarmentLib")]
     private static extern void GetContoursMesh(IntPtr texData, int width, int height,int intervalX,int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles,ref int tsize);
+
+    [DllImport("YGarmentLib")]
+    private static extern void GetContoursMeshByPoints(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
 
     Point2D[] Vector2IntPtr(Vector2[] v)
     {
@@ -123,7 +129,7 @@ public class UInterface : MonoBehaviour
 
 
 
-    public Vector2[] DoRigidAffine(Vector2[] p, Vector2[] q, Vector2[] v)
+    public Vector2[] MeshDeformation(Vector2[] p, Vector2[] q, Vector2[] v,int[] t)
     {
         int size = 0;
 
@@ -139,13 +145,16 @@ public class UInterface : MonoBehaviour
         var vs = Vector2IntPtr(v);
         GCHandle vh = GCHandle.Alloc(vs, GCHandleType.Pinned);
         IntPtr VPtr = vh.AddrOfPinnedObject();
-        
 
-        IntPtr ptr = RigidAffine(ref size, PPtr, p.Length, QPtr, q.Length, VPtr, v.Length,2);
+        GCHandle th = GCHandle.Alloc(t, GCHandleType.Pinned);
+        IntPtr TPtr = th.AddrOfPinnedObject();
+
+        IntPtr ptr = MeshDeformation(ref size, PPtr, p.Length, QPtr, q.Length, VPtr, v.Length,TPtr,t.Length,0);
 
         ph.Free();
         qh.Free();
         vh.Free();
+        th.Free();
 
         Vector2[] varray = IntPtr2Vector(ptr,size);
 
@@ -155,6 +164,44 @@ public class UInterface : MonoBehaviour
         return varray;
 
     }
+
+
+    public Vector2[] ARAPDeformation(Vector2[] p, Vector2[] q, Vector2[] v, int[] t)
+    {
+        int size = 0;
+
+
+        var ps = Vector2IntPtr(p);
+        GCHandle ph = GCHandle.Alloc(ps, GCHandleType.Pinned);
+        IntPtr PPtr = ph.AddrOfPinnedObject();
+
+        var qs = Vector2IntPtr(q);
+        GCHandle qh = GCHandle.Alloc(qs, GCHandleType.Pinned);
+        IntPtr QPtr = qh.AddrOfPinnedObject();
+
+        var vs = Vector2IntPtr(v);
+        GCHandle vh = GCHandle.Alloc(vs, GCHandleType.Pinned);
+        IntPtr VPtr = vh.AddrOfPinnedObject();
+
+        GCHandle th = GCHandle.Alloc(t, GCHandleType.Pinned);
+        IntPtr TPtr = th.AddrOfPinnedObject();
+
+        IntPtr ptr = ARAPDeformation(ref size, PPtr, p.Length, QPtr, q.Length, VPtr, v.Length, TPtr, t.Length, 30);
+
+        ph.Free();
+        qh.Free();
+        vh.Free();
+        th.Free();
+
+        Vector2[] varray = IntPtr2Vector(ptr, size);
+
+
+        Release(ptr);
+
+        return varray;
+
+    }
+
 
     public unsafe Texture2D DetectContoursImage(Texture2D texData)
     {
@@ -220,7 +267,7 @@ public class UInterface : MonoBehaviour
 
             IntPtr pVer = IntPtr.Zero;
             IntPtr pTri = IntPtr.Zero;
-            GetContoursMesh((IntPtr)p, texData.width, texData.height,10,10, 100, ref size, ref pVer,ref vsize, ref pTri,ref tsize);
+            GetContoursMesh((IntPtr)p, texData.width, texData.height,50,50, 100, ref size, ref pVer,ref vsize, ref pTri,ref tsize);
 
             Mesh m = new Mesh();
 
@@ -258,4 +305,60 @@ public class UInterface : MonoBehaviour
         }
 
     }
+
+    public unsafe Mesh GetContoursMeshByPoints(List<Vector2> points, int width, int height)
+    {
+
+
+        var ps = Vector2IntPtr(points.ToArray());
+        GCHandle ph = GCHandle.Alloc(ps, GCHandleType.Pinned);
+        IntPtr PPtr = ph.AddrOfPinnedObject();
+
+        IntPtr pVer = IntPtr.Zero;
+        IntPtr pTri = IntPtr.Zero;
+
+        int size = 0;
+        int vsize = 0;
+        int tsize = 0;
+
+        GetContoursMeshByPoints(PPtr, points.Count, width, height, 50, 50, 100, ref size, ref pVer, ref vsize, ref pTri, ref tsize);
+
+        Mesh m = new Mesh();
+
+        var vertices = IntPtr2Vector3(pVer, vsize);
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            var temp = vertices[i];
+            vertices[i] = new Vector3(temp.x / width - 0.5f, temp.y / height - 0.5f, 0);
+        }
+
+
+
+        var triangles = IntPtr2IntArray(pTri, tsize);
+
+        var uvs = IntPtr2Vector(pVer, vsize, 1f / width, 1f / height);
+
+
+        m.vertices = vertices;
+
+
+        for (int i = 0; i < triangles.Length / 3; i++)
+        {
+            var temp = triangles[i * 3 + 2];
+            triangles[i * 3 + 2] = triangles[i * 3 + 1];
+            triangles[i * 3 + 1] = temp;
+        }
+        m.triangles = triangles;
+        m.uv = uvs;
+
+        Release(pVer);
+        Release(pTri);
+
+        return m;
+
+
+    }
+
+
 }

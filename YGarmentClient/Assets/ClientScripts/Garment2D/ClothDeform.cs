@@ -1,44 +1,35 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
-public class ClothLoader : MonoBehaviour
+public class ClothDeform : MonoBehaviour
 {
-    public string m_MeshPath = "";
+
+    Mesh m_Mesh;
+    public MeshFilter m_Filter;
 
     public Transform m_PPoints;
     public Transform m_QPoints;
 
     public GameObject m_Wrapped;
-
-    Mesh m_Mesh;
-
+    
     // Start is called before the first frame update
     void Start()
     {
-        string path = Path.Combine(Application.dataPath, m_MeshPath);
-        if (File.Exists(path) == true)
+        if(m_Filter != null)
         {
-            byte[] bytes = File.ReadAllBytes(path);
-            m_Mesh = MeshSerializer.ReadMesh(bytes);
-
-            gameObject.GetComponent<MeshFilter>().mesh = m_Mesh;
+            m_Mesh = m_Filter.mesh;
+            MeshDeformation();
 
         }
-        else
-        {
-            Debug.LogError("Mesh Not Found");
-        }
 
-        Affine();
     }
 
 
-    void Affine()
+    void MeshDeformation()
     {
         Vector2[] ps = new Vector2[m_PPoints.childCount];
-        for(int i = 0; i<ps.Length;i++)
+        for (int i = 0; i < ps.Length; i++)
         {
             Vector3 p = m_PPoints.GetChild(i).position;
             ps[i] = new Vector2(p.x, p.y);
@@ -54,7 +45,7 @@ public class ClothLoader : MonoBehaviour
 
 
         Vector2[] vs = new Vector2[m_Mesh.vertices.Length];
-        for (int i = 0; i <  m_Mesh.vertices.Length; i++)
+        for (int i = 0; i < m_Mesh.vertices.Length; i++)
         {
             Vector3 v = m_Mesh.vertices[i];
             vs[i] = new Vector2(v.x, v.y);
@@ -62,11 +53,12 @@ public class ClothLoader : MonoBehaviour
 
 
         UInterface uinterface = new UInterface();
-        Vector2[] lvs = uinterface.DoRigidAffine(ps, qs, vs);
+        //Vector2[] lvs = uinterface.MeshDeformation(ps, qs, vs, m_Mesh.triangles);
+        Vector2[] lvs = uinterface.ARAPDeformation(ps, qs, vs, m_Mesh.triangles);
 
         Mesh newmesh = Instantiate(m_Mesh);
 
-        if(lvs != null)
+        if (lvs != null)
         {
 
             Vector3[] newvertices = new Vector3[lvs.Length];
@@ -79,9 +71,9 @@ public class ClothLoader : MonoBehaviour
             newmesh.vertices = newvertices;
 
 
-            string path = Path.Combine(Application.dataPath, "3D/CoatMesh_Wrapped");
-            byte[] bytes = MeshSerializer.WriteMesh(newmesh, true);
-            File.WriteAllBytes(path, bytes);
+            //string path = Path.Combine(Application.dataPath, "3D/CoatMesh_Wrapped");
+            //byte[] bytes = MeshSerializer.WriteMesh(newmesh, true);
+            //File.WriteAllBytes(path, bytes);
             m_Wrapped.GetComponent<MeshFilter>().mesh = newmesh;
         }
 
@@ -89,10 +81,4 @@ public class ClothLoader : MonoBehaviour
 
     }
 
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
