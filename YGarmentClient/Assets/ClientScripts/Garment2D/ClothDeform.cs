@@ -53,8 +53,8 @@ public class ClothDeform : MonoBehaviour
 
 
         UInterface uinterface = new UInterface();
-        //Vector2[] lvs = uinterface.MeshDeformation(ps, qs, vs, m_Mesh.triangles);
-        Vector2[] lvs = uinterface.ARAPDeformation(ps, qs, vs, m_Mesh.triangles);
+        Vector2[] lvs = uinterface.MeshDeformation(ps, qs, vs, m_Mesh.triangles);
+        //Vector2[] lvs = uinterface.ARAPDeformation(ps, qs, vs, m_Mesh.triangles);
 
         Mesh newmesh = Instantiate(m_Mesh);
 
