@@ -6,6 +6,8 @@ using UnityEngine;
 public class GenClothMeshByPoint : MonoBehaviour
 {
     public string mSavePath;
+    public int width = 800;
+    public int height = 800;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,14 +17,14 @@ public class GenClothMeshByPoint : MonoBehaviour
         {
             if(t != transform)
             {
-                float x = (t.position.x + 4) * 100;
-                float y = (t.position.y + 4) * 100;
+                float x = (t.position.x + 0.5f) * width;
+                float y = (t.position.y + 0.5f) * height;
                 points.Add(new Vector2(x, y));
             }
         }
 
         UInterface uinterface = new UInterface();
-        var mesh = uinterface.GetContoursMeshByPoints(points, 800, 800);
+        var mesh = uinterface.GetContoursMeshByPoints(points, width, height);
 
 
         string path = Path.Combine(Application.dataPath, mSavePath);
