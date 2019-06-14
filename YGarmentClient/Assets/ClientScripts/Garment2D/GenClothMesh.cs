@@ -10,9 +10,8 @@ public class GenClothMesh : MonoBehaviour
     public string mSavePath;
     private void Start()
     {
-
-        UInterface uinterface = new UInterface();
-        var mesh = uinterface.GetContoursMesh(mTexture);
+        
+        var mesh = UInterface.GetContoursMesh(mTexture);
 
         string path = Path.Combine(Application.dataPath, mSavePath);
         byte[] bytes = MeshSerializer.WriteMesh(mesh, true);

@@ -18,10 +18,9 @@ public class MainEntry : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        UInterface uinterface = new UInterface();
-        m_DstTexture = uinterface.DetectContoursImage(m_Texture);
+        m_DstTexture = UInterface.DetectContoursImage(m_Texture);
 
-        m_Contours = uinterface.DetectContours(m_DstTexture);
+        m_Contours = UInterface.DetectContours(m_DstTexture);
 
         StartCoroutine(AddCount());
 

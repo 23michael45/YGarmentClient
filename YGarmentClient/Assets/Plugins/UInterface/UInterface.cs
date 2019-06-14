@@ -3,15 +3,132 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
-public class UInterface : MonoBehaviour
+[StructLayout(LayoutKind.Sequential)]
+public struct Point2D
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Point2D
+    public float x;
+    public float y;
+}
+
+
+public static class UInterface
+{
+    static IntPtr m_PluginDll;
+
+#if UNITY_EDITOR
+    static class NativeMethods
     {
-        public float x;
-        public float y;
+        [DllImport("kernel32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool FreeLibrary(IntPtr hModule);
+
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr LoadLibrary(string lpFileName);
+
+        [DllImport("kernel32")]
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
     }
+    
+    public static void GetProcAddress<T>(ref T func,string funcname) where T : Delegate
+    {
+        IntPtr pAddressOfFunctionToCall = NativeMethods.GetProcAddress(m_PluginDll, funcname);
+        func = (T)Marshal.GetDelegateForFunctionPointer(pAddressOfFunctionToCall, typeof(T));
+
+    }
+
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate IntPtr Native_CreateBaselFaceModel_Delegate([MarshalAs(UnmanagedType.LPStr)] string fileName,ref IntPtr verBuffer,ref int vLen,ref IntPtr triBuffer,ref int tLen,ref int pcaDimCount);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_DestroyBaselFaceModel_Delegate(IntPtr handle);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int len);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
+    
+    static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
+    static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
+
+    static Native_SetMeshVerticesMemoryAddr_Delegate Native_SetMeshVerticesMemoryAddr;
+    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelCoff;
+
+#else
+
+    [DllImport("YGarmentLib")]
+    private static extern void Native_SetMeshMemAddr(IntPtr verBuffer, int len);
+
+    [DllImport("YGarmentLib")]
+    private static extern bool Native_SetBFMCoff(IntPtr coffBuffer, int len);
+#endif
+    
+    public static void LoadLibrary()
+    {
+#if UNITY_EDITOR
+        if(m_PluginDll != IntPtr.Zero)
+        {
+            Debug.Log("Library alreadly Loaded");
+
+            return;
+        }
+
+        string sCurrentPath = Directory.GetCurrentDirectory();
+        Debug.Log("sCurrentPath:" + sCurrentPath);
+
+        Debug.Log("Load Library");
+        string sPluginPath = Path.Combine(Application.dataPath, @"Plugins");
+        string dllPath = Path.Combine(sPluginPath, @"YGarmentLib.dll");
+        if (File.Exists(dllPath))
+        {
+            Directory.SetCurrentDirectory(sPluginPath);
+            m_PluginDll = NativeMethods.LoadLibrary(dllPath);
+
+            if (m_PluginDll != IntPtr.Zero)
+            {
+                GetProcAddress(ref Native_CreateBaselFaceModel, "CreateBaselFaceModel");
+                GetProcAddress(ref Native_DestroyBaselFaceModel, "DestroyBaselFaceModel");
+
+                GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
+                GetProcAddress(ref Native_ChangeBaselFaceModelCoff, "ChangeBaselFaceModelCoff");
+            }
+            else
+            {
+                Debug.LogError("Load Library Failed : " + Marshal.GetLastWin32Error().ToString());
+            }
+
+            Directory.SetCurrentDirectory(sCurrentPath);
+        }
+        else
+        {
+            Debug.LogError("Dll File Not Exist");
+
+        }
+#endif
+    }
+    public static void FreeLibrary()
+    {
+#if UNITY_EDITOR
+        if (m_PluginDll == IntPtr.Zero)
+        {
+            return;
+        }
+        bool result = NativeMethods.FreeLibrary(m_PluginDll);
+        if(result)
+        {
+
+            m_PluginDll = IntPtr.Zero;
+            Debug.Log("Free Library");
+        }
+        else
+        {
+
+            Debug.Log("Free Library Failed");
+        }
+#endif
+    }
+
 
     [DllImport("YGarmentLib")]
     private static extern IntPtr MeshDeformation(ref int size,IntPtr plist,int pl,IntPtr qlist,int ql,IntPtr vlist,int vl,IntPtr tlist,int tl,int type);
@@ -33,7 +150,11 @@ public class UInterface : MonoBehaviour
     [DllImport("YGarmentLib")]
     private static extern void GetContoursMeshByPoints(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
 
-    Point2D[] Vector2IntPtr(Vector2[] v)
+
+
+
+
+    static Point2D[] Vector2IntPtr(Vector2[] v)
     {
         Point2D[] p = new Point2D[v.Length];
         for(int i = 0; i< v.Length;i++)
@@ -51,7 +172,7 @@ public class UInterface : MonoBehaviour
         return p;
     }
 
-    Vector2[] IntPtr2Vector(IntPtr ptr,int size, float scalex = 1,float scaley = 1)
+    static Vector2[] IntPtr2Vector(IntPtr ptr,int size, float scalex = 1,float scaley = 1)
     {
 
         Point2D[] p = new Point2D[size];
@@ -79,7 +200,7 @@ public class UInterface : MonoBehaviour
         return v;
     }
 
-    Vector3[] IntPtr2Vector3(IntPtr ptr, int size, float scalex = 1, float scaley = 1)
+    static Vector3[] IntPtr2Vector3(IntPtr ptr, int size, float scalex = 1, float scaley = 1)
     {
 
         Point2D[] p = new Point2D[size];
@@ -107,7 +228,7 @@ public class UInterface : MonoBehaviour
         }
         return v;
     }
-    int[] IntPtr2IntArray(IntPtr ptr, int size)
+    static int[] IntPtr2IntArray(IntPtr ptr, int size)
     {
 
         int[] arr = new int[size];
@@ -129,7 +250,7 @@ public class UInterface : MonoBehaviour
 
 
 
-    public Vector2[] MeshDeformation(Vector2[] p, Vector2[] q, Vector2[] v,int[] t)
+    public static Vector2[] MeshDeformation(Vector2[] p, Vector2[] q, Vector2[] v,int[] t)
     {
         int size = 0;
 
@@ -166,7 +287,7 @@ public class UInterface : MonoBehaviour
     }
 
 
-    public Vector2[] ARAPDeformation(Vector2[] p, Vector2[] q, Vector2[] v, int[] t)
+    public static Vector2[] ARAPDeformation(Vector2[] p, Vector2[] q, Vector2[] v, int[] t)
     {
         int size = 0;
 
@@ -203,7 +324,7 @@ public class UInterface : MonoBehaviour
     }
 
 
-    public unsafe Texture2D DetectContoursImage(Texture2D texData)
+    public static unsafe Texture2D DetectContoursImage(Texture2D texData)
     {
         byte[] data = texData.GetRawTextureData();
         Debug.Log(data.Length);
@@ -231,7 +352,7 @@ public class UInterface : MonoBehaviour
         return null;
     }
 
-    public unsafe Vector2[] DetectContours(Texture2D texData)
+    public static unsafe Vector2[] DetectContours(Texture2D texData)
     {
         byte[] data = texData.GetRawTextureData();
         Debug.Log(data.Length);
@@ -252,7 +373,7 @@ public class UInterface : MonoBehaviour
     }
 
 
-    public unsafe Mesh GetContoursMesh(Texture2D texData)
+    public static unsafe Mesh GetContoursMesh(Texture2D texData)
     {
 
 
@@ -306,7 +427,7 @@ public class UInterface : MonoBehaviour
 
     }
 
-    public unsafe Mesh GetContoursMeshByPoints(List<Vector2> points, int width, int height)
+    public static unsafe Mesh GetContoursMeshByPoints(List<Vector2> points, int width, int height)
     {
 
 
@@ -360,5 +481,62 @@ public class UInterface : MonoBehaviour
 
     }
 
+
+    public static unsafe IntPtr CreateBaselFaceModel(string fileName,ref Vector3[] vertices,ref int[] triangles,ref int pcaDimCount)
+    {
+        IntPtr verBuffer = IntPtr.Zero;
+        int verCount = 0;
+        IntPtr triBuffer = IntPtr.Zero;
+        int triCount = 0;
+
+        IntPtr handle = Native_CreateBaselFaceModel(fileName, ref verBuffer,ref verCount, ref triBuffer, ref triCount,ref pcaDimCount);
+
+
+        vertices = new Vector3[verCount];
+        int offset = 0;
+        int vecSize = Marshal.SizeOf(typeof(Vector3));
+        for (int i = 0; i < verCount; i++)
+        {
+            vertices[i] = (Vector3)Marshal.PtrToStructure(new IntPtr(verBuffer.ToInt32() + offset), typeof(Vector3));
+            offset += vecSize;
+        }
+
+        int triLen = triCount * 3;
+        triangles = new int[triLen];
+        offset = 0;
+        vecSize = Marshal.SizeOf(typeof(int));
+        for (int i = 0; i < triLen; i++)
+        {
+            triangles[i] = (int)Marshal.PtrToStructure(new IntPtr(triBuffer.ToInt32() + offset), typeof(int));
+            offset += vecSize;
+        }
+
+
+
+        return handle;
+    }
+    public static unsafe void DestroyBaselFaceModel(IntPtr handle)
+    {
+        Native_DestroyBaselFaceModel(handle);
+    }
+    public static unsafe void ChangeBaselFaceModelCoff(IntPtr handle,float[] coff)
+    {
+        GCHandle ph = GCHandle.Alloc(coff, GCHandleType.Pinned);
+        IntPtr coffBuffer = ph.AddrOfPinnedObject();
+
+        Native_ChangeBaselFaceModelCoff(handle,coffBuffer, coff.Length);
+        ph.Free();
+    }
+
+
+    public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices)
+    {
+        GCHandle ph = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+        IntPtr verBuffer = ph.AddrOfPinnedObject();
+
+        Native_SetMeshVerticesMemoryAddr(handle,verBuffer, vertices.Length);
+
+
+    }
 
 }

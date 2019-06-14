@@ -22,9 +22,8 @@ public class GenClothMeshByPoint : MonoBehaviour
                 points.Add(new Vector2(x, y));
             }
         }
-
-        UInterface uinterface = new UInterface();
-        var mesh = uinterface.GetContoursMeshByPoints(points, width, height);
+        
+        var mesh = UInterface.GetContoursMeshByPoints(points, width, height);
 
 
         string path = Path.Combine(Application.dataPath, mSavePath);
