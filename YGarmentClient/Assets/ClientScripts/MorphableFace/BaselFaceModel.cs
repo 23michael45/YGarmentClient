@@ -6,16 +6,17 @@ using UnityEngine;
 
 public class BaselFaceModel : MonoBehaviour
 {
-    public bool m_Check = false;
+    public bool m_bChangeShape = false;
+    public bool m_bChangeColor = false;
 
     Mesh m_Mesh;
     Vector3[] m_Vertices;
+    Color[] m_Colors;
     int[] m_Triangles;
     int m_PcaDimCount;
     float[] m_Coff;
 
     IntPtr m_NativeHandle;
-    bool m_Dirty = false;
 
 
     void Start()
@@ -28,12 +29,19 @@ public class BaselFaceModel : MonoBehaviour
         Debug.Log(string.Format("Vertices : {0}", m_Vertices[0]));
         Debug.Log(string.Format("Triangle:{0} {1} {2}", m_Triangles[0], m_Triangles[1], m_Triangles[2]));
 
+        m_Colors = new Color[m_Vertices.Length];
+        for (int i = 0; i < m_Colors.Length; i++)
+        {
+            m_Colors[i] = new Color(0.650f, 0.443f, 0.313f, 1.000f);
+        }
+
         m_Mesh.vertices = m_Vertices;
+        m_Mesh.colors = m_Colors;
         m_Mesh.triangles = m_Triangles;
 
 
         m_Coff = new float[m_PcaDimCount];
-        UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices);
+        UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices,m_Colors);
 
     }
     private void OnDestroy()
@@ -47,24 +55,38 @@ public class BaselFaceModel : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(m_Check)
+        if(m_bChangeShape)
         {
-            m_Check = false;
+            m_bChangeShape = false;
             for(int i = 0; i < 199;i++)
             {
                 m_Coff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
             }
-            ChangeCoff();
-        }
+            ChangeShapeCoff();
 
-
-        if(m_Dirty)
-        {
             m_Mesh.vertices = m_Vertices;
-            m_Dirty = false;
-
-            Debug.Log("Update Mesh OK");
         }
+        if(m_bChangeColor)
+        {
+            m_bChangeColor = false;
+
+            for (int i = 0; i < 199; i++)
+            {
+                m_Coff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
+            }
+
+            ChangeColorCoff();
+
+            m_Mesh.colors = m_Colors;
+            //int start = 20000;
+            //int end = start +5000;
+            //for(int i = start; i < end; i++)
+            //{
+            //    Debug.Log(string.Format("Change Color {0}: {1}",i, m_Colors[i].ToString()));
+
+            //}
+        }
+        
 
     }
 
@@ -76,11 +98,19 @@ public class BaselFaceModel : MonoBehaviour
         Debug.Log(string.Format("Create BaselFaceModel : {0}", m_NativeHandle.ToString()));
     }
     
-    void ChangeCoff()
+    void ChangeShapeCoff()
     {
-        UInterface.ChangeBaselFaceModelCoff(m_NativeHandle, m_Coff);
-        m_Dirty = true;
-        Debug.Log("ChangeCoff OK");
+        UInterface.ChangeBaselFaceModelShapeCoff(m_NativeHandle, m_Coff);
+        Debug.Log("ChangeShapeCoff OK");
     }
-
+    void ChangeExpressionCoff()
+    {
+        UInterface.ChangeBaselFaceModelExpressionCoff(m_NativeHandle, m_Coff);
+        Debug.Log("ChangeExpressionCoff OK");
+    }
+    void ChangeColorCoff()
+    {
+        UInterface.ChangeBaselFaceModelColorCoff(m_NativeHandle, m_Coff);
+        Debug.Log("ChangeColorCoff OK");
+    }
 }

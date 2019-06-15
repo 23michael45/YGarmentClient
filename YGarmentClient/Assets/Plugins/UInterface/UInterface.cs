@@ -45,7 +45,7 @@ public static class UInterface
     private delegate void Native_DestroyBaselFaceModel_Delegate(IntPtr handle);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int len);
+    private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int verLen, IntPtr colBuffer, int colLen);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
     
@@ -53,7 +53,9 @@ public static class UInterface
     static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
 
     static Native_SetMeshVerticesMemoryAddr_Delegate Native_SetMeshVerticesMemoryAddr;
-    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelCoff;
+    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelShapeCoff;
+    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelExpressionCoff;
+    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
 
 #else
 
@@ -63,7 +65,7 @@ public static class UInterface
     [DllImport("YGarmentLib")]
     private static extern bool Native_SetBFMCoff(IntPtr coffBuffer, int len);
 #endif
-    
+
     public static void LoadLibrary()
     {
 #if UNITY_EDITOR
@@ -91,7 +93,9 @@ public static class UInterface
                 GetProcAddress(ref Native_DestroyBaselFaceModel, "DestroyBaselFaceModel");
 
                 GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
-                GetProcAddress(ref Native_ChangeBaselFaceModelCoff, "ChangeBaselFaceModelCoff");
+                GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoff, "ChangeBaselFaceModelShapeCoff");
+                GetProcAddress(ref Native_ChangeBaselFaceModelExpressionCoff, "ChangeBaselFaceModelExpressionCoff");
+                GetProcAddress(ref Native_ChangeBaselFaceModelColorCoff, "ChangeBaselFaceModelColorCoff");
             }
             else
             {
@@ -497,7 +501,7 @@ public static class UInterface
         int vecSize = Marshal.SizeOf(typeof(Vector3));
         for (int i = 0; i < verCount; i++)
         {
-            vertices[i] = (Vector3)Marshal.PtrToStructure(new IntPtr(verBuffer.ToInt32() + offset), typeof(Vector3));
+            vertices[i] = (Vector3)Marshal.PtrToStructure(new IntPtr(verBuffer.ToInt64() + offset), typeof(Vector3));
             offset += vecSize;
         }
 
@@ -507,7 +511,7 @@ public static class UInterface
         vecSize = Marshal.SizeOf(typeof(int));
         for (int i = 0; i < triLen; i++)
         {
-            triangles[i] = (int)Marshal.PtrToStructure(new IntPtr(triBuffer.ToInt32() + offset), typeof(int));
+            triangles[i] = (int)Marshal.PtrToStructure(new IntPtr(triBuffer.ToInt64() + offset), typeof(int));
             offset += vecSize;
         }
 
@@ -519,22 +523,40 @@ public static class UInterface
     {
         Native_DestroyBaselFaceModel(handle);
     }
-    public static unsafe void ChangeBaselFaceModelCoff(IntPtr handle,float[] coff)
+    public static unsafe void ChangeBaselFaceModelShapeCoff(IntPtr handle,float[] coff)
     {
         GCHandle ph = GCHandle.Alloc(coff, GCHandleType.Pinned);
         IntPtr coffBuffer = ph.AddrOfPinnedObject();
 
-        Native_ChangeBaselFaceModelCoff(handle,coffBuffer, coff.Length);
+        Native_ChangeBaselFaceModelShapeCoff(handle,coffBuffer, coff.Length);
+        ph.Free();
+    }
+    public static unsafe void ChangeBaselFaceModelExpressionCoff(IntPtr handle, float[] coff)
+    {
+        GCHandle ph = GCHandle.Alloc(coff, GCHandleType.Pinned);
+        IntPtr coffBuffer = ph.AddrOfPinnedObject();
+
+        Native_ChangeBaselFaceModelExpressionCoff(handle, coffBuffer, coff.Length);
+        ph.Free();
+    }
+    public static unsafe void ChangeBaselFaceModelColorCoff(IntPtr handle, float[] coff)
+    {
+        GCHandle ph = GCHandle.Alloc(coff, GCHandleType.Pinned);
+        IntPtr coffBuffer = ph.AddrOfPinnedObject();
+
+        Native_ChangeBaselFaceModelColorCoff(handle, coffBuffer, coff.Length);
         ph.Free();
     }
 
 
-    public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices)
+    public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices,Color[] colors)
     {
-        GCHandle ph = GCHandle.Alloc(vertices, GCHandleType.Pinned);
-        IntPtr verBuffer = ph.AddrOfPinnedObject();
+        GCHandle phv = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+        IntPtr verBuffer = phv.AddrOfPinnedObject();
 
-        Native_SetMeshVerticesMemoryAddr(handle,verBuffer, vertices.Length);
+        GCHandle phc = GCHandle.Alloc(colors, GCHandleType.Pinned);
+        IntPtr colerBuffer = phc.AddrOfPinnedObject();
+        Native_SetMeshVerticesMemoryAddr(handle,verBuffer, vertices.Length, colerBuffer, colors.Length);
 
 
     }
