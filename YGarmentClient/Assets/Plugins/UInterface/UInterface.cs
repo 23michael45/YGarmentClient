@@ -48,7 +48,16 @@ public static class UInterface
     private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int verLen, IntPtr colBuffer, int colLen);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
-    
+
+
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_GetContoursMesh_Delegate(IntPtr texData, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_GetContoursMeshByPoints_Delegate(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
+
+
     static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
     static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
 
@@ -57,6 +66,13 @@ public static class UInterface
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelExpressionCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
 
+
+    static Native_GetContoursMesh_Delegate Native_GetContoursMesh;
+    static Native_GetContoursMeshByPoints_Delegate Native_GetContoursMeshByPoints;
+
+    
+
+
 #else
 
     [DllImport("YGarmentLib")]
@@ -64,8 +80,15 @@ public static class UInterface
 
     [DllImport("YGarmentLib")]
     private static extern bool Native_SetBFMCoff(IntPtr coffBuffer, int len);
-#endif
 
+    [DllImport("YGarmentLib")]
+    private static extern void GetContoursMesh(IntPtr texData, int width, int height,int intervalX,int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles,ref int tsize);
+
+    [DllImport("YGarmentLib")]
+    private static extern void GetContoursMeshByPoints(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
+
+
+#endif
     public static void LoadLibrary()
     {
 #if UNITY_EDITOR
@@ -96,6 +119,10 @@ public static class UInterface
                 GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoff, "ChangeBaselFaceModelShapeCoff");
                 GetProcAddress(ref Native_ChangeBaselFaceModelExpressionCoff, "ChangeBaselFaceModelExpressionCoff");
                 GetProcAddress(ref Native_ChangeBaselFaceModelColorCoff, "ChangeBaselFaceModelColorCoff");
+
+
+                GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
+                GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
             }
             else
             {
@@ -148,12 +175,6 @@ public static class UInterface
     private static extern IntPtr DetectContoursImage(IntPtr texData, int width, int height);
 
 
-    [DllImport("YGarmentLib")]
-    private static extern void GetContoursMesh(IntPtr texData, int width, int height,int intervalX,int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles,ref int tsize);
-
-    [DllImport("YGarmentLib")]
-    private static extern void GetContoursMeshByPoints(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
-
 
 
 
@@ -188,7 +209,7 @@ public static class UInterface
         int pointSize = Marshal.SizeOf(typeof(Point2D));
         for (int i = 0; i < size; i++)
         {
-            p[i] = (Point2D)Marshal.PtrToStructure(new IntPtr(ptr.ToInt32() + offset), typeof(Point2D));
+            p[i] = (Point2D)Marshal.PtrToStructure(new IntPtr(ptr.ToInt64() + offset), typeof(Point2D));
             offset += pointSize;
         }
 
@@ -216,7 +237,7 @@ public static class UInterface
         int pointSize = Marshal.SizeOf(typeof(Point2D));
         for (int i = 0; i < size; i++)
         {
-            p[i] = (Point2D)Marshal.PtrToStructure(new IntPtr(ptr.ToInt32() + offset), typeof(Point2D));
+            p[i] = (Point2D)Marshal.PtrToStructure(new IntPtr(ptr.ToInt64() + offset), typeof(Point2D));
             offset += pointSize;
         }
 
@@ -244,7 +265,7 @@ public static class UInterface
         int pointSize = Marshal.SizeOf(typeof(int));
         for (int i = 0; i < size; i++)
         {
-            arr[i] = (int)Marshal.PtrToStructure(new IntPtr(ptr.ToInt32() + offset), typeof(int));
+            arr[i] = (int)Marshal.PtrToStructure(new IntPtr(ptr.ToInt64() + offset), typeof(int));
             offset += pointSize;
         }
         
@@ -392,7 +413,7 @@ public static class UInterface
 
             IntPtr pVer = IntPtr.Zero;
             IntPtr pTri = IntPtr.Zero;
-            GetContoursMesh((IntPtr)p, texData.width, texData.height,50,50, 100, ref size, ref pVer,ref vsize, ref pTri,ref tsize);
+            Native_GetContoursMesh((IntPtr)p, texData.width, texData.height,50,50, 100, ref size, ref pVer,ref vsize, ref pTri,ref tsize);
 
             Mesh m = new Mesh();
 
@@ -431,7 +452,7 @@ public static class UInterface
 
     }
 
-    public static unsafe Mesh GetContoursMeshByPoints(List<Vector2> points, int width, int height)
+    public static unsafe Mesh GetContoursMeshByPoints(List<Vector2> points, int width, int height,int intervalX,int intervalY)
     {
 
 
@@ -446,7 +467,9 @@ public static class UInterface
         int vsize = 0;
         int tsize = 0;
 
-        GetContoursMeshByPoints(PPtr, points.Count, width, height, 50, 50, 100, ref size, ref pVer, ref vsize, ref pTri, ref tsize);
+        Native_GetContoursMeshByPoints(PPtr, points.Count, width, height, intervalX, intervalY, ref size, ref pVer, ref vsize, ref pTri, ref tsize);
+
+        Debug.Log(string.Format("GetContoursMeshByPoints pVer: {0}", pVer.ToInt64()));
 
         Mesh m = new Mesh();
 
@@ -455,7 +478,7 @@ public static class UInterface
         for (int i = 0; i < vertices.Length; i++)
         {
             var temp = vertices[i];
-            vertices[i] = new Vector3(temp.x / width - 0.5f, temp.y / height - 0.5f, 0);
+            vertices[i] = new Vector3(temp.x - width / 2, temp.y, 0);
         }
 
 

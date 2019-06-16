@@ -243,7 +243,7 @@ public class CSharpCallCpp : MonoBehaviour
         int pointSize = Marshal.SizeOf(typeof(ExamplePoint));
         for (int i = 0; i < arraySize; i++)
         {
-            pointArr[i] = (ExamplePoint)Marshal.PtrToStructure(new IntPtr(dataPtr.ToInt32() + offset), typeof(ExamplePoint));
+            pointArr[i] = (ExamplePoint)Marshal.PtrToStructure(new IntPtr(dataPtr.ToInt64() + offset), typeof(ExamplePoint));
             offset += pointSize;
         }
         print("pointArr[" + arraySize + "]=[" + pointArr[0] + ", " + pointArr[1] + ",...]");

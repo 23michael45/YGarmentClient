@@ -6,12 +6,13 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ClothLoader : MonoBehaviour
 {
+    public bool m_bLoad = false;
     public string m_MeshPath = "";
 
     Mesh m_Mesh;
 
     // Start is called before the first frame update
-    void Start()
+    void Load()
     {
         string path = Path.Combine(Application.dataPath, m_MeshPath);
         if (File.Exists(path) == true)
@@ -32,6 +33,11 @@ public class ClothLoader : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(m_bLoad)
+        {
+            m_bLoad = false;
+            Load();
+        }
         
     }
 }
