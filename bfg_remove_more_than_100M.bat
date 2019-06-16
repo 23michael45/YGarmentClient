@@ -1,1 +1,1 @@
-java -jar bfg-1.13.0.jar --strip-blobs-bigger-than 100M YGarmentClient.git
+java -jar bfg-1.13.0.jar --strip-blobs-bigger-than 100M
