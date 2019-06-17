@@ -1,4 +1,4 @@
-﻿Shader "Hidden/YUVtoRGB_C1"
+﻿Shader "YUV/YUVtoRGB_C1"
 {
 	Properties
 	{

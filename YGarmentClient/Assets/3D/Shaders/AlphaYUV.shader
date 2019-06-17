@@ -1,4 +1,4 @@
-﻿Shader "YUV/YUVtoRGB_C3"
+﻿Shader "Unlit/AlphaYUV"
 {
 	Properties
 	{
@@ -47,9 +47,16 @@
 			fixed3 YUVtoRGB(fixed3 c)
 			{
 				fixed3 rgb;
-				rgb.r = c.x + c.z * 1.13983;
-				rgb.g = c.x + dot(fixed2(-0.39465, -0.58060), c.yz);
-				rgb.b = c.x + c.y * 2.03211;
+				fixed y = c.r;
+				fixed u = c.g;
+				fixed v = c.b;
+				//rgb.r = c.x + c.z * 1.13983;
+				//rgb.g = c.x + dot(fixed2(-0.39465, -0.58060), c.yz);
+				//rgb.b = c.x + c.y * 2.03211;
+
+				rgb.r = 1.164*(y - 16. / 255.) + 1.596*(v - 128. / 255.);
+				rgb.g = 1.164*(y - 16. / 255.) - 0.813*(v - 128. / 255.) - 0.391*(u - 128. / 255.);
+				rgb.b = 1.164*(y - 16. / 255.) + 2.018*(u - 128. / 255.);
 				return rgb;
 			}
 

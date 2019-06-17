@@ -58,6 +58,12 @@ public static class UInterface
     private delegate void Native_GetContoursMeshByPoints_Delegate(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
 
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_SetUnityTexturePtr_Delegate([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_FillUnityData_Delegate();
+
+
     static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
     static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
 
@@ -70,8 +76,13 @@ public static class UInterface
     static Native_GetContoursMesh_Delegate Native_GetContoursMesh;
     static Native_GetContoursMeshByPoints_Delegate Native_GetContoursMeshByPoints;
 
-    
+    //static Native_SetUnityTexturePtr_Delegate Native_SetUnityTexturePtr;
+    //static Native_FillUnityData_Delegate Native_FillUnityData;
 
+    [DllImport("YGarmentLib")]
+    public static extern void SetUnityTexturePtr([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
+    [DllImport("YGarmentLib")]
+    public static extern void FillUnityData();
 
 #else
 
@@ -123,6 +134,9 @@ public static class UInterface
 
                 GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
                 GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
+
+                //GetProcAddress(ref Native_SetUnityTexturePtr, "SetUnityTexturePtr");
+                //GetProcAddress(ref Native_FillUnityData, "FillUnityData");
             }
             else
             {
@@ -584,4 +598,16 @@ public static class UInterface
 
     }
 
+
+    public static unsafe void SetUnityTexturePtr(string texName,Texture tex)
+    {
+        long ptr = (long)(tex.GetNativeTexturePtr());
+        long i = tex.GetNativeTexturePtr().ToInt64();
+        Debug.Log("Ptr:" + i.ToString("X"));
+        SetUnityTexturePtr(texName, tex.GetNativeTexturePtr());
+    }
+    public static unsafe void DoFillUnityData()
+    {
+        FillUnityData();
+    }
 }
