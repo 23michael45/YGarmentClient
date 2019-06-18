@@ -68,7 +68,8 @@
 				fixed4 yuv = fixed4(y,u,v,1.0);
 				//fixed4 yuv = fixed4(0,0,0, 1.0);
 				fixed4 rgb = fixed4(YUVtoRGB(yuv.rgb), yuv.a);
-
+				//fixed4 rgb = fixed4(1,0,0,1);
+				
 				//rgb.r = fixed(0);
 				//rgb.g = fixed(0);
 				//rgb.b = fixed(0);

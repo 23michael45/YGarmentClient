@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct Point2D
@@ -16,6 +17,10 @@ public struct Point2D
 public static class UInterface
 {
     static IntPtr m_PluginDll;
+
+
+
+
 
 #if UNITY_EDITOR
     static class NativeMethods
@@ -34,6 +39,9 @@ public static class UInterface
     public static void GetProcAddress<T>(ref T func,string funcname) where T : Delegate
     {
         IntPtr pAddressOfFunctionToCall = NativeMethods.GetProcAddress(m_PluginDll, funcname);
+
+        UnityEngine.Debug.Log(string.Format("Load Function: {0} Addr: {1}", funcname, pAddressOfFunctionToCall.ToInt64()));
+
         func = (T)Marshal.GetDelegateForFunctionPointer(pAddressOfFunctionToCall, typeof(T));
 
     }
@@ -41,50 +49,47 @@ public static class UInterface
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate IntPtr Native_CreateBaselFaceModel_Delegate([MarshalAs(UnmanagedType.LPStr)] string fileName,ref IntPtr verBuffer,ref int vLen,ref IntPtr triBuffer,ref int tLen,ref int pcaDimCount);
+    static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
+
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_DestroyBaselFaceModel_Delegate(IntPtr handle);
+    static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int verLen, IntPtr colBuffer, int colLen);
+    static Native_SetMeshVerticesMemoryAddr_Delegate Native_SetMeshVerticesMemoryAddr;
+
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
-
-
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_GetContoursMesh_Delegate(IntPtr texData, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_GetContoursMeshByPoints_Delegate(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
-
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_SetUnityTexturePtr_Delegate([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_FillUnityData_Delegate();
-
-
-    static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
-    static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
-
-    static Native_SetMeshVerticesMemoryAddr_Delegate Native_SetMeshVerticesMemoryAddr;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelShapeCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelExpressionCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
 
 
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_GetContoursMesh_Delegate(IntPtr texData, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
     static Native_GetContoursMesh_Delegate Native_GetContoursMesh;
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_GetContoursMeshByPoints_Delegate(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
     static Native_GetContoursMeshByPoints_Delegate Native_GetContoursMeshByPoints;
 
-    //static Native_SetUnityTexturePtr_Delegate Native_SetUnityTexturePtr;
-    //static Native_FillUnityData_Delegate Native_FillUnityData;
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_SetUnityTexturePtr_Delegate([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
+    static Native_SetUnityTexturePtr_Delegate Native_SetUnityTexturePtr;
 
-    [DllImport("YGarmentLib")]
-    public static extern void SetUnityTexturePtr([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
-    [DllImport("YGarmentLib")]
-    public static extern void FillUnityData();
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_FillUnityData_Delegate([MarshalAs(UnmanagedType.LPStr)] string fileName);
+    static Native_FillUnityData_Delegate Native_FillUnityData;
+    
+
+    
 #else
+    
 
     [DllImport("YGarmentLib")]
     private static extern void Native_SetMeshMemAddr(IntPtr verBuffer, int len);
@@ -105,15 +110,15 @@ public static class UInterface
 #if UNITY_EDITOR
         if(m_PluginDll != IntPtr.Zero)
         {
-            Debug.Log("Library alreadly Loaded");
+            UnityEngine.Debug.Log("Library alreadly Loaded");
 
             return;
         }
 
         string sCurrentPath = Directory.GetCurrentDirectory();
-        Debug.Log("sCurrentPath:" + sCurrentPath);
+        UnityEngine.Debug.Log("sCurrentPath:" + sCurrentPath);
 
-        Debug.Log("Load Library");
+        UnityEngine.Debug.Log("Load Library");
         string sPluginPath = Path.Combine(Application.dataPath, @"Plugins");
         string dllPath = Path.Combine(sPluginPath, @"YGarmentLib.dll");
         if (File.Exists(dllPath))
@@ -135,19 +140,21 @@ public static class UInterface
                 GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
                 GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
 
-                //GetProcAddress(ref Native_SetUnityTexturePtr, "SetUnityTexturePtr");
-                //GetProcAddress(ref Native_FillUnityData, "FillUnityData");
+                GetProcAddress(ref Native_SetUnityTexturePtr, "SetUnityTexturePtr");
+                GetProcAddress(ref Native_FillUnityData, "FillUnityData");
+
+                
             }
             else
             {
-                Debug.LogError("Load Library Failed : " + Marshal.GetLastWin32Error().ToString());
+                UnityEngine.Debug.LogError("Load Library Failed : " + Marshal.GetLastWin32Error().ToString());
             }
 
             Directory.SetCurrentDirectory(sCurrentPath);
         }
         else
         {
-            Debug.LogError("Dll File Not Exist");
+            UnityEngine.Debug.LogError("Dll File Not Exist");
 
         }
 #endif
@@ -164,16 +171,35 @@ public static class UInterface
         {
 
             m_PluginDll = IntPtr.Zero;
-            Debug.Log("Free Library");
+            UnityEngine.Debug.Log("Free Library");
         }
         else
         {
 
-            Debug.Log("Free Library Failed");
+            UnityEngine.Debug.Log("Free Library Failed");
         }
 #endif
     }
+    public static void FreeAllLibrary()
+    {
+        FreeLibrary();
+        List<string> freelist = new List<string>();
+        freelist.Add("YGarmentLib");
 
+        foreach (ProcessModule mod in Process.GetCurrentProcess().Modules)
+        {
+            foreach(string file in freelist)
+            {
+                if (mod.FileName.Contains(file))
+                {
+                    UnityEngine.Debug.Log("Free:" + mod.FileName);
+                    NativeMethods.FreeLibrary(mod.BaseAddress);
+                    break;
+                }
+            }
+          
+        }
+    }
 
     [DllImport("YGarmentLib")]
     private static extern IntPtr MeshDeformation(ref int size,IntPtr plist,int pl,IntPtr qlist,int ql,IntPtr vlist,int vl,IntPtr tlist,int tl,int type);
@@ -366,7 +392,7 @@ public static class UInterface
     public static unsafe Texture2D DetectContoursImage(Texture2D texData)
     {
         byte[] data = texData.GetRawTextureData();
-        Debug.Log(data.Length);
+        UnityEngine.Debug.Log(data.Length);
         Color32[] texDataColor = texData.GetPixels32();
         //Pin Memory
         fixed (Color32* p = (texDataColor))
@@ -394,14 +420,14 @@ public static class UInterface
     public static unsafe Vector2[] DetectContours(Texture2D texData)
     {
         byte[] data = texData.GetRawTextureData();
-        Debug.Log(data.Length);
+        UnityEngine.Debug.Log(data.Length);
         Color32[] texDataColor = texData.GetPixels32();
         //Pin Memory
         fixed (Color32* p = (texDataColor))
         {
             int size = 0;
             IntPtr pData = DetectContours((IntPtr)p, texData.width, texData.height,100,ref size);
-            Debug.Log("Contours Size:" + size);
+            UnityEngine.Debug.Log("Contours Size:" + size);
             if (pData != IntPtr.Zero)
             {
                 return IntPtr2Vector(pData, size);
@@ -417,7 +443,7 @@ public static class UInterface
 
 
         byte[] data = texData.GetRawTextureData();
-        Debug.Log(data.Length);
+        UnityEngine.Debug.Log(data.Length);
         Color32[] texDataColor = texData.GetPixels32();
         fixed (Color32* p = (texDataColor))
         {
@@ -483,7 +509,7 @@ public static class UInterface
 
         Native_GetContoursMeshByPoints(PPtr, points.Count, width, height, intervalX, intervalY, ref size, ref pVer, ref vsize, ref pTri, ref tsize);
 
-        Debug.Log(string.Format("GetContoursMeshByPoints pVer: {0}", pVer.ToInt64()));
+        UnityEngine.Debug.Log(string.Format("GetContoursMeshByPoints pVer: {0}", pVer.ToInt64()));
 
         Mesh m = new Mesh();
 
@@ -603,11 +629,15 @@ public static class UInterface
     {
         long ptr = (long)(tex.GetNativeTexturePtr());
         long i = tex.GetNativeTexturePtr().ToInt64();
-        Debug.Log("Ptr:" + i.ToString("X"));
-        SetUnityTexturePtr(texName, tex.GetNativeTexturePtr());
+        UnityEngine.Debug.Log("Ptr:" + i.ToString("X"));
+        Native_SetUnityTexturePtr(texName, tex.GetNativeTexturePtr());
     }
     public static unsafe void DoFillUnityData()
     {
-        FillUnityData();
+        Native_FillUnityData("D:/DevelopProj/Yuji/YProject/YGarmentClient/YGarmentClient/Assets/2D/Cloth/T.jpg");
     }
+    
+
+
+
 }

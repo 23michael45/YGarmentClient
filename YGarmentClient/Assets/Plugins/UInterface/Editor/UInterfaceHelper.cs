@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,5 +17,18 @@ public class UInterfaceHelper : MonoBehaviour
     public static void FreeLibrary()
     {
         UInterface.FreeLibrary();
+    }
+    [MenuItem("Dll Library/Free All")]
+    public static void FreeAllLibrary()
+    {
+        UInterface.FreeAllLibrary();
+    }
+
+    [DllImport("YGarmentLib")]
+    private static extern IntPtr GetRenderEventFunc();
+    [MenuItem("Dll Library/Load Render Plugin")]
+    public static void IssuePluginEvent()
+    {
+        GetRenderEventFunc();
     }
 }
