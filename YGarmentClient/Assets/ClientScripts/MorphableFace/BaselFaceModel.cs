@@ -16,10 +16,10 @@ public class BaselFaceModel : MonoBehaviour
     int m_PcaDimCount;
     float[] m_Coff;
 
-    IntPtr m_NativeHandle;
 
+    public static IntPtr m_NativeHandle;
 
-    void Start()
+    IEnumerator Start()
     {
         UInterface.LoadLibrary();
         m_Mesh = GetComponent<MeshFilter>().mesh;
@@ -42,6 +42,12 @@ public class BaselFaceModel : MonoBehaviour
 
         m_Coff = new float[m_PcaDimCount];
         UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices,m_Colors);
+
+
+        yield return new WaitForEndOfFrame();
+
+        ChangeColorCoff();
+        m_Mesh.colors = m_Colors;
 
     }
     private void OnDestroy()
@@ -78,6 +84,9 @@ public class BaselFaceModel : MonoBehaviour
             ChangeColorCoff();
 
             m_Mesh.colors = m_Colors;
+
+            Debug.Log(m_Colors[100]);
+            Debug.Log(m_Colors[101]);
             //int start = 20000;
             //int end = start +5000;
             //for(int i = start; i < end; i++)
@@ -94,6 +103,7 @@ public class BaselFaceModel : MonoBehaviour
     void CreateBaselFaceModel()
     {
         string BFMFileName = "D:/DevelopProj/Yuji/FaceModel/model2017-1_bfm_nomouth.h5";
+        //string BFMFileName = "D:/DevelopProj/Yuji/FaceModel/sfm_shape_3448.h5";
         m_NativeHandle = UInterface.CreateBaselFaceModel(BFMFileName, ref m_Vertices, ref m_Triangles,ref m_PcaDimCount);
         Debug.Log(string.Format("Create BaselFaceModel : {0}", m_NativeHandle.ToString()));
     }
@@ -112,5 +122,10 @@ public class BaselFaceModel : MonoBehaviour
     {
         UInterface.ChangeBaselFaceModelColorCoff(m_NativeHandle, m_Coff);
         Debug.Log("ChangeColorCoff OK");
+    }
+
+    public void ExternalUpdateShape()
+    {
+        m_Mesh.vertices = m_Vertices;
     }
 }
