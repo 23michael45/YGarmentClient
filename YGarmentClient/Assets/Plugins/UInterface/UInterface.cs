@@ -68,6 +68,11 @@ public static class UInterface
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
 
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate(IntPtr handle, IntPtr landmarkBuffer, int coffLen,int width,int height);
+    static Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate Native_ChangeBaselFaceModelShapeCoffFromLandmark;
+
+
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_GetContoursMesh_Delegate(IntPtr texData, int width, int height, int intervalX, int intervalY, float thresh, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
@@ -81,6 +86,7 @@ public static class UInterface
     private delegate void Native_SetUnityTexturePtr_Delegate([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
     static Native_SetUnityTexturePtr_Delegate Native_SetUnityTexturePtr;
 
+    
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_FillUnityData_Delegate([MarshalAs(UnmanagedType.LPStr)] string fileName);
@@ -105,6 +111,25 @@ public static class UInterface
 
 
 #endif
+    public static void LoadFunctions()
+    {
+
+        GetProcAddress(ref Native_CreateBaselFaceModel, "CreateBaselFaceModel");
+        GetProcAddress(ref Native_DestroyBaselFaceModel, "DestroyBaselFaceModel");
+
+        GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
+        GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoff, "ChangeBaselFaceModelShapeCoff");
+        GetProcAddress(ref Native_ChangeBaselFaceModelExpressionCoff, "ChangeBaselFaceModelExpressionCoff");
+        GetProcAddress(ref Native_ChangeBaselFaceModelColorCoff, "ChangeBaselFaceModelColorCoff");
+        GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoffFromLandmark, "ChangeBaselFaceModelShapeCoffFromLandmark");
+        
+
+        GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
+        GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
+
+        GetProcAddress(ref Native_SetUnityTexturePtr, "SetUnityTexturePtr");
+        GetProcAddress(ref Native_FillUnityData, "FillUnityData");
+    }
     public static void LoadLibrary()
     {
 #if UNITY_EDITOR
@@ -128,22 +153,9 @@ public static class UInterface
 
             if (m_PluginDll != IntPtr.Zero)
             {
-                GetProcAddress(ref Native_CreateBaselFaceModel, "CreateBaselFaceModel");
-                GetProcAddress(ref Native_DestroyBaselFaceModel, "DestroyBaselFaceModel");
-
-                GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
-                GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoff, "ChangeBaselFaceModelShapeCoff");
-                GetProcAddress(ref Native_ChangeBaselFaceModelExpressionCoff, "ChangeBaselFaceModelExpressionCoff");
-                GetProcAddress(ref Native_ChangeBaselFaceModelColorCoff, "ChangeBaselFaceModelColorCoff");
+                LoadFunctions();
 
 
-                GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
-                GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
-
-                GetProcAddress(ref Native_SetUnityTexturePtr, "SetUnityTexturePtr");
-                GetProcAddress(ref Native_FillUnityData, "FillUnityData");
-
-                
             }
             else
             {
@@ -192,9 +204,17 @@ public static class UInterface
             {
                 if (mod.FileName.Contains(file))
                 {
-                    UnityEngine.Debug.Log("Free:" + mod.FileName);
-                    NativeMethods.FreeLibrary(mod.BaseAddress);
-                    break;
+                    bool b = NativeMethods.FreeLibrary(mod.BaseAddress);
+                    if(b)
+                    {
+                        UnityEngine.Debug.Log("Free Sucess:" + mod.FileName);
+                        break;
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.Log("Free Failed:" + mod.FileName);
+
+                    }
                 }
             }
           
@@ -578,8 +598,6 @@ public static class UInterface
             offset += vecSize;
         }
 
-
-
         return handle;
     }
     public static unsafe void DestroyBaselFaceModel(IntPtr handle)
@@ -611,6 +629,23 @@ public static class UInterface
         ph.Free();
     }
 
+    public static unsafe void ChangeBaselFaceModelShapeCoffFromLandmark(IntPtr handle, List<Vector2> landmarks,int width,int height)
+    {
+        float[] landmarkBuff = new float[landmarks.Count * 2];
+        for(int i = 0; i< landmarks.Count;i++)
+        {
+
+            landmarkBuff[i * 2 + 0] = landmarks[i].x;
+            landmarkBuff[i * 2 + 1] = landmarks[i].y;
+        }
+
+
+        GCHandle ph = GCHandle.Alloc(landmarkBuff, GCHandleType.Pinned);
+        IntPtr buffer = ph.AddrOfPinnedObject();
+
+        Native_ChangeBaselFaceModelShapeCoffFromLandmark(handle, buffer, landmarkBuff.Length,width,height);
+        ph.Free();
+    }
 
     public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices,Color[] colors)
     {
