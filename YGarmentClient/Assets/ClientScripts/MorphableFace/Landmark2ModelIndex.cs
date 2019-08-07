@@ -16,6 +16,10 @@ public class Landmark2ModelIndex : MonoBehaviour
     public RawImage m_ResultImage;
 
     public GameObject m_WorldLandmarkPrefab;
+    public GameObject m_VertexLandmarkPrefab;
+
+    public Transform m_WorldLandmarkContainer;
+    public Transform m_VertexLandmarkContainer;
 
     public MeshCollider m_MeshCollider;
 
@@ -94,7 +98,7 @@ public class Landmark2ModelIndex : MonoBehaviour
 
             GameObject landmark3d = GameObject.Instantiate(m_WorldLandmarkPrefab);
             landmark3d.SetActive(true);
-            landmark3d.transform.parent = transform;
+            landmark3d.transform.parent = m_WorldLandmarkContainer;
             
 
             Vector3 from = new Vector3(x, y, 1000);
@@ -104,38 +108,72 @@ public class Landmark2ModelIndex : MonoBehaviour
             // Does the ray intersect any objects excluding the player layer
             if (Physics.Raycast(from, -Vector3.forward, out hit, Mathf.Infinity))
             {
+
+
                 landmark3d.transform.position = hit.point;
 
 
-
-
-                
-                Vector3[] vertices = m_Mesh.vertices;
-                int[] triangles = m_Mesh.triangles;
-                Vector3[] vers = new Vector3[3];
-                vers[0] = vertices[triangles[hit.triangleIndex * 3 + 0]];
-                vers[1] = vertices[triangles[hit.triangleIndex * 3 + 1]];
-                vers[2] = vertices[triangles[hit.triangleIndex * 3 + 2]];
-
-                float dist = float.MaxValue;
-                int index = -1;
-                for(int i = 0; i< 3;i++)
+                if (hit.collider.gameObject.name == "BaselFaceModel2017")
                 {
-                    float tempdist = Vector3.Distance(vers[i], hit.point);
-                    if (tempdist < dist)
+
+
+                    Vector3[] vertices = m_Mesh.vertices;
+                    int[] triangles = m_Mesh.triangles;
+                    Vector3[] vers = new Vector3[3];
+                    vers[0] = vertices[triangles[hit.triangleIndex * 3 + 0]];
+                    vers[1] = vertices[triangles[hit.triangleIndex * 3 + 1]];
+                    vers[2] = vertices[triangles[hit.triangleIndex * 3 + 2]];
+
+                    float dist = float.MaxValue;
+                    int index = -1;
+                    for (int i = 0; i < 3; i++)
                     {
-                        index = triangles[hit.triangleIndex * 3 + i];
-                        dist = tempdist;
+                        float tempdist = Vector3.Distance(vers[i], hit.point);
+                        if (tempdist < dist)
+                        {
+                            index = triangles[hit.triangleIndex * 3 + i];
+                            dist = tempdist;
+                        }
+
                     }
 
-                }
+                    LandmarkMapper[landmarkIndex] = index;
 
-                LandmarkMapper[landmarkIndex] = index;
+                    GameObject vertexLandmark3d = GameObject.Instantiate(m_VertexLandmarkPrefab);
+                    vertexLandmark3d.SetActive(true);
+                    vertexLandmark3d.transform.parent = m_VertexLandmarkContainer;
+                    vertexLandmark3d.transform.position = vertices[index];
+
+                }
+                else
+                {
+
+                    Vector3[] vertices = m_Mesh.vertices;
+                    float dist = float.MaxValue;
+                    int index = -1;
+                    for (int i = 0; i < vertices.Length; i++)
+                    {
+                        float tempdist = Vector3.Distance(vertices[i], hit.point);
+                        if (tempdist < dist)
+                        {
+                            index = i;
+                            dist = tempdist;
+                        }
+
+                    }
+
+                    LandmarkMapper[landmarkIndex] = index;
+
+
+                    GameObject vertexLandmark3d = GameObject.Instantiate(m_VertexLandmarkPrefab);
+                    vertexLandmark3d.SetActive(true);
+                    vertexLandmark3d.transform.parent = m_VertexLandmarkContainer;
+                    vertexLandmark3d.transform.position = vertices[index];
+                }
 
             }
             else
             {
-
                 Debug.Log("Did not Hit");
             }
 
