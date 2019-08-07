@@ -48,7 +48,7 @@ public static class UInterface
 
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate IntPtr Native_CreateBaselFaceModel_Delegate([MarshalAs(UnmanagedType.LPStr)] string fileName,ref IntPtr verBuffer,ref int vLen,ref IntPtr triBuffer,ref int tLen,ref int pcaDimCount);
+    private delegate IntPtr Native_CreateBaselFaceModel_Delegate([MarshalAs(UnmanagedType.LPStr)] string modelFileName, [MarshalAs(UnmanagedType.LPStr)] string shapeFileName, ref IntPtr verBuffer,ref int vLen,ref IntPtr triBuffer,ref int tLen,ref int pcaDimCount,ref IntPtr colBuffer, ref int colLen);
     static Native_CreateBaselFaceModel_Delegate Native_CreateBaselFaceModel;
 
 
@@ -57,21 +57,32 @@ public static class UInterface
     static Native_DestroyBaselFaceModel_Delegate Native_DestroyBaselFaceModel;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int verLen, IntPtr colBuffer, int colLen);
+    private delegate void Native_SetMeshVerticesMemoryAddr_Delegate(IntPtr handle, IntPtr verBuffer, int verLen, IntPtr uvBuffer, int uvLen, IntPtr colBuffer, int colLen,bool saveh5);
     static Native_SetMeshVerticesMemoryAddr_Delegate Native_SetMeshVerticesMemoryAddr;
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_SetTextureMemoryAddr_Delegate(IntPtr handle, IntPtr texBuffer,int width,int height);
+    static Native_SetTextureMemoryAddr_Delegate Native_SetTextureMemoryAddr;
+
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_SaveBFMH5_Delegate(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string h5FileName);
+    static Native_SaveBFMH5_Delegate Native_SaveBFMH5;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelShapeCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelExpressionCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate(IntPtr handle, IntPtr landmarkBuffer, int coffLen,int width,int height, int bfm_point_count, bool bDebug);
+    static Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate Native_ChangeBaselFaceModelShapeCoffFromLandmark;
 
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate(IntPtr handle, IntPtr landmarkBuffer, int coffLen,int width,int height);
-    static Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate Native_ChangeBaselFaceModelShapeCoffFromLandmark;
-
+    private delegate void Native_ChangeBaselFaceModelShapeCoffFromImage_Delegate(IntPtr handle, IntPtr texData, int width, int height, int bfm_point_count, bool bDebug,IntPtr cameraCoff);
+    static Native_ChangeBaselFaceModelShapeCoffFromImage_Delegate Native_ChangeBaselFaceModelShapeCoffFromImage;
 
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -81,6 +92,7 @@ public static class UInterface
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_GetContoursMeshByPoints_Delegate(IntPtr plist, int pl, int width, int height, int intervalX, int intervalY, ref int size, ref IntPtr pVertices, ref int vsize, ref IntPtr pTriangles, ref int tsize);
     static Native_GetContoursMeshByPoints_Delegate Native_GetContoursMeshByPoints;
+
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_SetUnityTexturePtr_Delegate([MarshalAs(UnmanagedType.LPStr)] string texName, IntPtr ptr);
@@ -117,12 +129,15 @@ public static class UInterface
         GetProcAddress(ref Native_CreateBaselFaceModel, "CreateBaselFaceModel");
         GetProcAddress(ref Native_DestroyBaselFaceModel, "DestroyBaselFaceModel");
 
-        GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
         GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoff, "ChangeBaselFaceModelShapeCoff");
         GetProcAddress(ref Native_ChangeBaselFaceModelExpressionCoff, "ChangeBaselFaceModelExpressionCoff");
         GetProcAddress(ref Native_ChangeBaselFaceModelColorCoff, "ChangeBaselFaceModelColorCoff");
         GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoffFromLandmark, "ChangeBaselFaceModelShapeCoffFromLandmark");
-        
+        GetProcAddress(ref Native_ChangeBaselFaceModelShapeCoffFromImage, "ChangeBaselFaceModelShapeCoffFromImage");
+
+        GetProcAddress(ref Native_SetMeshVerticesMemoryAddr, "SetMeshVerticesMemoryAddr");
+        GetProcAddress(ref Native_SaveBFMH5, "SaveBFMH5");
+        GetProcAddress(ref Native_SetTextureMemoryAddr, "SetTextureMemoryAddr");
 
         GetProcAddress(ref Native_GetContoursMesh, "GetContoursMesh");
         GetProcAddress(ref Native_GetContoursMeshByPoints, "GetContoursMeshByPoints");
@@ -569,14 +584,17 @@ public static class UInterface
     }
 
 
-    public static unsafe IntPtr CreateBaselFaceModel(string fileName,ref Vector3[] vertices,ref int[] triangles,ref int pcaDimCount)
+    public static unsafe IntPtr CreateBaselFaceModel(string modelFileName,string shapeFileName,ref Vector3[] vertices,ref int[] triangles,ref int pcaDimCount,ref Color[] colors)
     {
         IntPtr verBuffer = IntPtr.Zero;
         int verCount = 0;
         IntPtr triBuffer = IntPtr.Zero;
         int triCount = 0;
 
-        IntPtr handle = Native_CreateBaselFaceModel(fileName, ref verBuffer,ref verCount, ref triBuffer, ref triCount,ref pcaDimCount);
+        IntPtr colBuffer = IntPtr.Zero;
+        int colCount = 0;
+
+        IntPtr handle = Native_CreateBaselFaceModel(modelFileName,shapeFileName, ref verBuffer,ref verCount, ref triBuffer, ref triCount,ref pcaDimCount, ref colBuffer,ref colCount);
 
 
         vertices = new Vector3[verCount];
@@ -595,6 +613,17 @@ public static class UInterface
         for (int i = 0; i < triLen; i++)
         {
             triangles[i] = (int)Marshal.PtrToStructure(new IntPtr(triBuffer.ToInt64() + offset), typeof(int));
+            offset += vecSize;
+        }
+
+
+        colors = new Color[colCount];
+        offset = 0;
+        vecSize = Marshal.SizeOf(typeof(Vector3));
+        for (int i = 0; i < colCount; i++)
+        {
+            Vector3 temp = (Vector3)Marshal.PtrToStructure(new IntPtr(colBuffer.ToInt64() + offset), typeof(Vector3));
+            colors[i] = new Color(temp.x, temp.y, temp.z, 1.0f);
             offset += vecSize;
         }
 
@@ -629,7 +658,7 @@ public static class UInterface
         ph.Free();
     }
 
-    public static unsafe void ChangeBaselFaceModelShapeCoffFromLandmark(IntPtr handle, List<Vector2> landmarks,int width,int height)
+    public static unsafe void ChangeBaselFaceModelShapeCoffFromLandmark(IntPtr handle, List<Vector2> landmarks,int width,int height, int bfm_point_count, bool bDebug)
     {
         float[] landmarkBuff = new float[landmarks.Count * 2];
         for(int i = 0; i< landmarks.Count;i++)
@@ -643,20 +672,67 @@ public static class UInterface
         GCHandle ph = GCHandle.Alloc(landmarkBuff, GCHandleType.Pinned);
         IntPtr buffer = ph.AddrOfPinnedObject();
 
-        Native_ChangeBaselFaceModelShapeCoffFromLandmark(handle, buffer, landmarkBuff.Length,width,height);
+        Native_ChangeBaselFaceModelShapeCoffFromLandmark(handle, buffer, landmarkBuff.Length,width,height, bfm_point_count, bDebug);
         ph.Free();
     }
 
-    public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices,Color[] colors)
+    public static unsafe void ChangeBaselFaceModelShapeCoffFromImage(IntPtr handle, Texture2D tex, int width, int height,int bfm_point_count, bool bDebug,ref Matrix4x4 cameraMatrix)
+    {
+        Color32[] texDataColor = tex.GetPixels32();
+        float[] cameraCoff = new float[12];
+        fixed (Color32* p = (texDataColor))
+        {
+            fixed(float* pCoff = cameraCoff)
+            {
+                Native_ChangeBaselFaceModelShapeCoffFromImage(handle, (IntPtr)p, width, height, bfm_point_count, bDebug, (IntPtr)pCoff);
+
+            }
+
+        }
+        cameraMatrix = Matrix4x4.identity;
+
+        cameraMatrix.m00 = cameraCoff[0];
+        cameraMatrix.m01 = cameraCoff[1];
+        cameraMatrix.m02 = cameraCoff[2];
+        cameraMatrix.m10 = cameraCoff[3];
+        cameraMatrix.m11 = cameraCoff[4];
+        cameraMatrix.m12 = cameraCoff[5];
+        cameraMatrix.m20 = cameraCoff[6];
+        cameraMatrix.m21 = cameraCoff[7];
+        cameraMatrix.m22 = cameraCoff[8];
+        cameraMatrix.m03 = cameraCoff[9];
+        cameraMatrix.m13 = cameraCoff[10];
+
+        //need divide
+        cameraMatrix.m33 = 1 / cameraCoff[11];
+    }
+
+    public static unsafe void SetMeshVerticesMemoryAddr(IntPtr handle, Vector3[] vertices, Vector2[] uvs,Color[] colors,bool saveh5)
     {
         GCHandle phv = GCHandle.Alloc(vertices, GCHandleType.Pinned);
         IntPtr verBuffer = phv.AddrOfPinnedObject();
 
         GCHandle phc = GCHandle.Alloc(colors, GCHandleType.Pinned);
         IntPtr colerBuffer = phc.AddrOfPinnedObject();
-        Native_SetMeshVerticesMemoryAddr(handle,verBuffer, vertices.Length, colerBuffer, colors.Length);
 
 
+        GCHandle phuv = GCHandle.Alloc(uvs, GCHandleType.Pinned);
+        IntPtr uvBuffer = phuv.AddrOfPinnedObject();
+        Native_SetMeshVerticesMemoryAddr(handle,verBuffer, vertices.Length,uvBuffer,uvs.Length, colerBuffer, colors.Length, saveh5);
+
+
+    }
+
+    public static unsafe void SetTextureMemoryAddr(IntPtr handle, Color32[] textureData, int width, int height)
+    {
+        fixed (Color32* p = (textureData))
+        {
+            Native_SetTextureMemoryAddr(handle, (IntPtr)p, width, height);
+        }
+    }
+    public static unsafe void SaveBFMH5(IntPtr handle, string h5FileName)
+    {
+        Native_SaveBFMH5(handle, h5FileName);
     }
 
 
@@ -667,6 +743,7 @@ public static class UInterface
         UnityEngine.Debug.Log("Ptr:" + i.ToString("X"));
         Native_SetUnityTexturePtr(texName, tex.GetNativeTexturePtr());
     }
+
     public static unsafe void DoFillUnityData()
     {
         Native_FillUnityData("D:/DevelopProj/Yuji/YProject/YGarmentClient/YGarmentClient/Assets/2D/Cloth/T.jpg");
