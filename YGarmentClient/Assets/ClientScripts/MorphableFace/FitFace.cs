@@ -1,4 +1,4 @@
-﻿using DlibFaceLandmarkDetector;
+﻿//using DlibFaceLandmarkDetector;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ public class FitFace : MonoBehaviour
 
     public bool m_PrjectVertexOrGameObject = true;
 
-    FaceLandmarkDetector m_FaceLandmarkDetector;
+    //FaceLandmarkDetector m_FaceLandmarkDetector;
     // Start is called before the first frame update
     IEnumerator Start()
     {
@@ -30,7 +30,7 @@ public class FitFace : MonoBehaviour
         string dlibShapePredictorFilePath = Application.dataPath + "/DlibFaceLandmarkDetector/StreamingAssets/sp_human_face_68.dat";
 
 
-        m_FaceLandmarkDetector = new FaceLandmarkDetector(dlibShapePredictorFilePath);
+        //m_FaceLandmarkDetector = new FaceLandmarkDetector(dlibShapePredictorFilePath);
 
     }
 
@@ -56,7 +56,7 @@ public class FitFace : MonoBehaviour
 
     void Fit(bool bDebug,int vCount)
     {
-        m_FaceLandmarkDetector.SetImage(m_SrcTexture);
+        //m_FaceLandmarkDetector.SetImage(m_SrcTexture);
 
         List<Vector2> points = new List<Vector2>();
         //if (usedlib)
