@@ -73,7 +73,6 @@ public class BaselFaceModel : MonoBehaviour
 
  
 
-        m_Uvs = m_UVMesh.uv;
 
         if(m_UVMesh == null || m_Uvs.Length != m_Vertices.Length)
         {
@@ -85,6 +84,7 @@ public class BaselFaceModel : MonoBehaviour
         }
         else
         {
+            m_Uvs = m_UVMesh.uv;
             Debug.Log("Texcoord:" + m_Uvs[0].x + "  :  " + m_Uvs[0].y);
         }
 
