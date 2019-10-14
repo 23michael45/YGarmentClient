@@ -72,9 +72,13 @@ public static class UInterface
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelCoff_Delegate(IntPtr handle, IntPtr coffBuffer,int coffLen);
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelShapeCoff;
-    static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelExpressionCoff;
     static Native_ChangeBaselFaceModelCoff_Delegate Native_ChangeBaselFaceModelColorCoff;
-    
+
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void Native_ChangeBaselFaceModelCoff2_Delegate(IntPtr handle, IntPtr shapeCoffBuffer, int sLen,IntPtr expCoffBuffer, int eLen);
+    static Native_ChangeBaselFaceModelCoff2_Delegate Native_ChangeBaselFaceModelExpressionCoff;
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate(IntPtr handle, IntPtr landmarkBuffer, int coffLen,int width,int height, int bfm_point_count, bool bDebug);
     static Native_ChangeBaselFaceModelShapeCoffFromLandmark_Delegate Native_ChangeBaselFaceModelShapeCoffFromLandmark;
@@ -641,13 +645,17 @@ public static class UInterface
         Native_ChangeBaselFaceModelShapeCoff(handle,coffBuffer, coff.Length);
         ph.Free();
     }
-    public static unsafe void ChangeBaselFaceModelExpressionCoff(IntPtr handle, float[] coff)
+    public static unsafe void ChangeBaselFaceModelExpressionCoff(IntPtr handle, float[] shapeCoff,float[] expCoff)
     {
-        GCHandle ph = GCHandle.Alloc(coff, GCHandleType.Pinned);
-        IntPtr coffBuffer = ph.AddrOfPinnedObject();
+        GCHandle phs = GCHandle.Alloc(shapeCoff, GCHandleType.Pinned);
+        IntPtr shapeCoffBuffer = phs.AddrOfPinnedObject();
 
-        Native_ChangeBaselFaceModelExpressionCoff(handle, coffBuffer, coff.Length);
-        ph.Free();
+        GCHandle phe = GCHandle.Alloc(expCoff, GCHandleType.Pinned);
+        IntPtr expCoffBuffer = phe.AddrOfPinnedObject();
+
+        Native_ChangeBaselFaceModelExpressionCoff(handle, shapeCoffBuffer, shapeCoff.Length, expCoffBuffer, expCoff.Length);
+        phs.Free();
+        phe.Free();
     }
     public static unsafe void ChangeBaselFaceModelColorCoff(IntPtr handle, float[] coff)
     {

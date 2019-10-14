@@ -15,7 +15,14 @@ public class FitFace : MonoBehaviour
     public bool m_bFit_53149 = false;
     public bool m_bFit_28588 = false;
 
-    public bool m_PrjectVertexOrGameObject = true;
+    public enum EPROJECTTYPE
+    {
+        EPT_NONE,
+        EPT_VERTEX,
+        EPT_GAMEOBJECT,
+    }
+
+    public EPROJECTTYPE m_PrjectType = EPROJECTTYPE.EPT_VERTEX;
 
     //FaceLandmarkDetector m_FaceLandmarkDetector;
     // Start is called before the first frame update
@@ -94,7 +101,7 @@ public class FitFace : MonoBehaviour
 
             
             //Project Vertex 
-            if(m_PrjectVertexOrGameObject)
+            if(m_PrjectType == EPROJECTTYPE.EPT_VERTEX)
             {
 
 
@@ -113,7 +120,7 @@ public class FitFace : MonoBehaviour
                 gameObject.transform.localScale = Vector3.one;
             }
             //Project GameObject
-            else
+            else if(m_PrjectType == EPROJECTTYPE.EPT_GAMEOBJECT)
             {
 
 
@@ -125,6 +132,8 @@ public class FitFace : MonoBehaviour
                 gameObject.transform.position = trans;
                 gameObject.transform.localScale = scale;
             }
+            else if(m_PrjectType == EPROJECTTYPE.EPT_NONE)
+            { }
 
         }
     }

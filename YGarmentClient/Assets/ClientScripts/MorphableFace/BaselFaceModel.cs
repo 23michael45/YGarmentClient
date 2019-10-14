@@ -16,7 +16,8 @@ public class BaselFaceModel : MonoBehaviour
     Color[] m_Colors;
     int[] m_Triangles;
     int m_PcaDimCount;
-    float[] m_Coff;
+    float[] m_ShapeCoff;
+    float[] m_ExpCoff;
 
     public int m_FinalTextureWidth = 1024;
     public int m_FinalTextureHeight = 1024;
@@ -94,7 +95,7 @@ public class BaselFaceModel : MonoBehaviour
         m_Mesh.triangles = m_Triangles;
 
 
-        m_Coff = new float[m_PcaDimCount];
+        m_ShapeCoff = new float[m_PcaDimCount];
         UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices, m_Uvs, m_Colors, false);
 
 
@@ -103,7 +104,7 @@ public class BaselFaceModel : MonoBehaviour
         UInterface.SetTextureMemoryAddr(m_NativeHandle, m_FinalTextureRawData, m_FinalTextureWidth, m_FinalTextureHeight);
 
 
-        //UInterface.SaveBFMH5(m_NativeHandle, "D:/DevelopProj/Yuji/FaceModel/model2017-1_bfm_nomouth.h5");
+        UInterface.SaveBFMH5(m_NativeHandle, "D:/DevelopProj/Yuji/FaceModel/53149_uv.h5");
 
         gameObject.GetComponent<Renderer>().sharedMaterial.SetTexture("_MainTex", m_FinalTexture);
 
@@ -130,7 +131,7 @@ public class BaselFaceModel : MonoBehaviour
             m_bChangeShape = false;
             for(int i = 0; i < m_PcaDimCount; i++)
             {
-                m_Coff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
+                m_ShapeCoff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
             }
             ChangeShapeCoff();
 
@@ -143,7 +144,7 @@ public class BaselFaceModel : MonoBehaviour
 
             for (int i = 0; i < m_PcaDimCount; i++)
             {
-                m_Coff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
+                m_ShapeCoff[i] = UnityEngine.Random.Range(-1.1f, 1.1f);
             }
 
             ChangeColorCoff();
@@ -207,17 +208,17 @@ public class BaselFaceModel : MonoBehaviour
     
     void ChangeShapeCoff()
     {
-        UInterface.ChangeBaselFaceModelShapeCoff(m_NativeHandle, m_Coff);
+        UInterface.ChangeBaselFaceModelShapeCoff(m_NativeHandle, m_ShapeCoff);
         Debug.Log("ChangeShapeCoff OK");
     }
     void ChangeExpressionCoff()
     {
-        UInterface.ChangeBaselFaceModelExpressionCoff(m_NativeHandle, m_Coff);
+        UInterface.ChangeBaselFaceModelExpressionCoff(m_NativeHandle, m_ShapeCoff,m_ExpCoff);
         Debug.Log("ChangeExpressionCoff OK");
     }
     void ChangeColorCoff()
     {
-        UInterface.ChangeBaselFaceModelColorCoff(m_NativeHandle, m_Coff);
+        UInterface.ChangeBaselFaceModelColorCoff(m_NativeHandle, m_ShapeCoff);
         Debug.Log("ChangeColorCoff OK");
     }
 
