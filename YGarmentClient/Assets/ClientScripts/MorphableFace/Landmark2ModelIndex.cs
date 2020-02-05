@@ -1,4 +1,4 @@
-﻿//using DlibFaceLandmarkDetector;
+﻿using DlibFaceLandmarkDetector;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -54,31 +54,31 @@ public class Landmark2ModelIndex : MonoBehaviour
         string dlibShapePredictorFilePath = Application.dataPath + "/DlibFaceLandmarkDetector/StreamingAssets/sp_human_face_68.dat";
 
 
-        //FaceLandmarkDetector faceLandmarkDetector = new FaceLandmarkDetector(dlibShapePredictorFilePath);
-        //faceLandmarkDetector.SetImage(tex);
-        //List<Rect> detectResult = faceLandmarkDetector.Detect();
+        FaceLandmarkDetector faceLandmarkDetector = new FaceLandmarkDetector(dlibShapePredictorFilePath);
+        faceLandmarkDetector.SetImage(tex);
+        List<Rect> detectResult = faceLandmarkDetector.Detect();
 
 
-        //foreach (var rect in detectResult)
-        //{
-        //    Debug.Log("face : " + rect);
+        foreach (var rect in detectResult)
+        {
+            Debug.Log("face : " + rect);
 
-        //    //detect landmark points
-        //    List<Vector2> points = faceLandmarkDetector.DetectLandmark(rect);
+            //detect landmark points
+            List<Vector2> points = faceLandmarkDetector.DetectLandmark(rect);
 
-        //    Debug.Log("face points count : " + points.Count);
-        //    foreach (var point in points)
-        //    {
-        //        Debug.Log("face point : x " + point.x + " y " + point.y);
-        //    }
+            Debug.Log("face points count : " + points.Count);
+            foreach (var point in points)
+            {
+                Debug.Log("face point : x " + point.x + " y " + point.y);
+            }
 
-        //    //draw landmark points
-        //    //faceLandmarkDetector.DrawDetectLandmarkResult(dstTexture2D, 0, 255, 0, 255);
+            //draw landmark points
+            //faceLandmarkDetector.DrawDetectLandmarkResult(dstTexture2D, 0, 255, 0, 255);
 
-        //    WorldPoints(points);
+            WorldPoints(points);
 
 
-        //}
+        }
 
 
         m_ResultImage.texture = dstTexture2D;

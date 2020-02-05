@@ -45,6 +45,15 @@ public class BaselFaceModel : MonoBehaviour
     public bool bSaveFBX = false;
     public string m_SaveMeshName;
 
+
+    public bool bSaveTex = false;
+    public string m_SaveTextureName;
+
+
+    public string mSaveH5Path = "D:/DevelopProj/Yuji/FaceModel/53149_uv.h5";
+    public bool bSaveH5Model = false;
+
+
     void SaveMesh()
     {
         if (!string.IsNullOrEmpty(m_SaveMeshName))
@@ -60,6 +69,12 @@ public class BaselFaceModel : MonoBehaviour
 
         }
     }
+    void SaveTexture()
+    {
+        var bytes = m_FinalTexture.EncodeToPNG();
+        string path = Path.Combine(Application.dataPath, m_SaveTextureName);
+        File.WriteAllBytes(path, bytes);
+    }
 
     IEnumerator Start()
     {
@@ -69,25 +84,27 @@ public class BaselFaceModel : MonoBehaviour
         CreateBaselFaceModel();
 
 
-        Debug.Log(string.Format("Vertices : {0}", m_Vertices[0]));
-        Debug.Log(string.Format("Triangle:{0} {1} {2}", m_Triangles[0], m_Triangles[1], m_Triangles[2]));
 
- 
-
-
-        if(m_UVMesh == null || m_Uvs.Length != m_Vertices.Length)
+        if (m_UVMesh == null)
         {
-            m_Uvs = new Vector2[m_Vertices.Length];
-            for (int i = 0; i < m_Uvs.Length; i++)
+            if (m_Uvs == null || m_Uvs.Length == 0)
             {
-                m_Uvs[i] = new Vector2(0f, 0f);
+                m_Uvs = new Vector2[m_Vertices.Length];
+                for (int i = 0; i < m_Uvs.Length; i++)
+                {
+                    m_Uvs[i] = new Vector2(0f, 0f);
+                }
+
+
             }
         }
         else
         {
-            m_Uvs = m_UVMesh.uv;
+            m_Uvs = new Vector2[m_Vertices.Length];
+            Array.Copy(m_UVMesh.uv,0,m_Uvs,0,m_Vertices.Length);
             Debug.Log("Texcoord:" + m_Uvs[0].x + "  :  " + m_Uvs[0].y);
         }
+
 
 
         m_Mesh.vertices = m_Vertices;
@@ -96,7 +113,7 @@ public class BaselFaceModel : MonoBehaviour
 
 
         m_ShapeCoff = new float[m_PcaDimCount];
-        UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices, m_Uvs, m_Colors, false);
+        UInterface.SetMeshVerticesMemoryAddr(m_NativeHandle, m_Vertices, m_Uvs, m_Colors, bSaveH5Model);
 
 
         m_FinalTexture = new Texture2D(m_FinalTextureWidth, m_FinalTextureHeight, TextureFormat.RGBA32,false);
@@ -104,13 +121,22 @@ public class BaselFaceModel : MonoBehaviour
         UInterface.SetTextureMemoryAddr(m_NativeHandle, m_FinalTextureRawData, m_FinalTextureWidth, m_FinalTextureHeight);
 
 
-        UInterface.SaveBFMH5(m_NativeHandle, "D:/DevelopProj/Yuji/FaceModel/53149_uv.h5");
+        if(bSaveH5Model)
+        {
+            UInterface.SaveBFMH5(m_NativeHandle, mSaveH5Path);
+
+        }
 
         gameObject.GetComponent<Renderer>().sharedMaterial.SetTexture("_MainTex", m_FinalTexture);
 
         m_Mesh.uv = m_Uvs;
         //SaveMesh();
-        
+
+
+        Debug.Log(string.Format("Vertices : {0}", m_Vertices[0]));
+        Debug.Log(string.Format("Triangle:{0} {1} {2}", m_Triangles[0], m_Triangles[1], m_Triangles[2]));
+        Debug.Log("Texcoord:" + m_Uvs[0].x + "  :  " + m_Uvs[0].y);
+
         yield return new WaitForEndOfFrame();
         
 
@@ -179,7 +205,11 @@ public class BaselFaceModel : MonoBehaviour
             bSaveFBX = false;
             SaveMesh();
         }
-
+        if (bSaveTex)
+        {
+            bSaveTex = false;
+            SaveTexture();
+        }
     }
 
 
